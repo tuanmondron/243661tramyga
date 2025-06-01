@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hiệu ứng chữ neon + Bụi sao & Ngôi sao lớn lấp lánh + Xoay 360</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+    }
+    canvas {
+      display: block;
+      background: black;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    function resize() {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const phrases = [
+      'Yêu Trà My',
+      'Chúc Trà My 1/6 vui vẻ ;>',
+      'I LOVE U',
+      'LOVE U SO MUCH ❤️',
+      'Bé iu mãi là bé iu❤️'
+    ];
+
+    class NeonText {
+      constructor(text) {
+        this.text = text;
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.speedX = (Math.random() - 0.5) * 0.5;
+        this.speedY = (Math.random() - 0.5) * 0.5;
+        this.opacity = Math.random() * 0.8 + 0.2;
+        this.size = 20 + Math.random() * 20;
+        this.angle = Math.random() * Math.PI * 2;
+        this.angleSpeed = (Math.random() - 0.5) * 0.01;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.font = `${this.size}px 'Arial'`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        ctx.shadowColor = 'rgba(255, 105, 180, 0.8)';
+        ctx.shadowBlur = 15;
+
+        ctx.fillStyle = `rgba(255, 105, 180, ${this.opacity})`;
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillText(this.text, 0, 0);
+        ctx.restore();
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.angle += this.angleSpeed;
+
+        if (this.x < 0 || this.x > W) this.speedX *= -1;
+        if (this.y < 0 || this.y > H) this.speedY *= -1;
+
+        this.opacity += (Math.random() - 0.5) * 0.02;
+        if (this.opacity > 1) this.opacity = 1;
+        if (this.opacity < 0.1) this.opacity = 0.1;
+      }
+    }
+
+    // Bụi sao nhỏ nhấp nháy
+    class Star {
+      constructor() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.size = Math.random() * 1.5 + 0.5;
+        this.baseOpacity = Math.random() * 0.5 + 0.5;
+        this.opacity = this.baseOpacity;
+        this.opacityChange = (Math.random() * 0.01) + 0.005;
+        this.opacityIncreasing = Math.random() > 0.5;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 5;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      update() {
+        if (this.opacityIncreasing) {
+          this.opacity += this.opacityChange;
+          if (this.opacity >= 1) {
+            this.opacity = 1;
+            this.opacityIncreasing = false;
+          }
+        } else {
+          this.opacity -= this.opacityChange;
+          if (this.opacity <= this.baseOpacity) {
+            this.opacity = this.baseOpacity;
+            this.opacityIncreasing = true;
+          }
+        }
+      }
+    }
+
+    // Ngôi sao lớn lấp lánh, hơi di chuyển
+    class BigStar {
+      constructor() {
+        this.x = Math.random() * W;
+        this.y = Math.random() * H;
+        this.size = Math.random() * 3 + 2;
+        this.baseOpacity = Math.random() * 0.7 + 0.3;
+        this.opacity = this.baseOpacity;
+        this.opacityChange = 0.01;
+        this.opacityIncreasing = true;
+        this.speedX = (Math.random() - 0.5) * 0.2;
+        this.speedY = (Math.random() - 0.5) * 0.2;
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.beginPath();
+
+        // Vẽ hình ngôi sao 5 cánh
+        const spikes = 5;
+        const outerRadius = this.size;
+        const innerRadius = this.size / 2;
+        let rot = Math.PI / 2 * 3;
+        let x = this.x;
+        let y = this.y;
+        let step = Math.PI / spikes;
+
+        ctx.moveTo(x, y - outerRadius);
+        for (let i = 0; i < spikes; i++) {
+          let sx = x + Math.cos(rot) * outerRadius;
+          let sy = y + Math.sin(rot) * outerRadius;
+          ctx.lineTo(sx, sy);
+          rot += step;
+
+          sx = x + Math.cos(rot) * innerRadius;
+          sy = y + Math.sin(rot) * innerRadius;
+          ctx.lineTo(sx, sy);
+          rot += step;
+        }
+        ctx.lineTo(x, y - outerRadius);
+        ctx.closePath();
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+        ctx.shadowColor = 'rgba(255, 255, 255, 1)';
+        ctx.shadowBlur = 15;
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+
+        if (this.x < 0) this.x = W;
+        else if (this.x > W) this.x = 0;
+
+        if (this.y < 0) this.y = H;
+        else if (this.y > H) this.y = 0;
+
+        if (this.opacityIncreasing) {
+          this.opacity += this.opacityChange;
+          if (this.opacity >= 1) {
+            this.opacity = 1;
+            this.opacityIncreasing = false;
+          }
+        } else {
+          this.opacity -= this.opacityChange;
+          if (this.opacity <= this.baseOpacity) {
+            this.opacity = this.baseOpacity;
+            this.opacityIncreasing = true;
+          }
+        }
+      }
+    }
+
+    const neonTexts = [];
+    for (let i = 0; i < 30; i++) {
+      const text = phrases[Math.floor(Math.random() * phrases.length)];
+      neonTexts.push(new NeonText(text));
+    }
+
+    const stars = [];
+    for (let i = 0; i < 150; i++) {
+      stars.push(new Star());
+    }
+
+    const bigStars = [];
+    for (let i = 0; i < 30; i++) {
+      bigStars.push(new BigStar());
+    }
+
+    let rotation = 0;
+
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+
+      ctx.save();
+      ctx.translate(W/2, H/2);
+      ctx.rotate(rotation);
+      ctx.translate(-W/2, -H/2);
+
+      stars.forEach(star => {
+        star.update();
+        star.draw(ctx);
+      });
+
+      bigStars.forEach(bigStar => {
+        bigStar.update();
+        bigStar.draw(ctx);
+      });
+
+      neonTexts.forEach(text => {
+        text.update();
+        text.draw(ctx);
+      });
+
+      ctx.restore();
+
+      rotation += 0.001;
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
